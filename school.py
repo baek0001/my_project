@@ -3,6 +3,11 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
+from pymongo import MongoClient  # pymongo를 임포트 하기(패키지 인스톨 먼저 해야겠죠?)
+
+client = MongoClient('localhost', 27017)  # mongoDB는 27017 포트로 돌아갑니다.
+db = client.dbschool  # 'dbreview'라는 이름의 db를 만들거나 사용합니다.
+
 # Disable flag warning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -133,7 +138,7 @@ def get_school(sido_code, sigungu_code):
 
 # 3. 학교 정보
 # 데이터가 없을 수도 있음 (ex. 서울특별시 강남구 단국대학교부속소프트웨어고등학교 - B100000373)
-def get_school_info(school_name, school_code):
+def get_school_info(sido, sigungu, school_name, school_code):
     url = 'https://www.schoolinfo.go.kr/ei/pp/Pneipp_b06_s0p.do?'
     params = {
         'GS_HANGMOK_CD': '06',
@@ -156,11 +161,20 @@ def get_school_info(school_name, school_code):
 
     data = requests.get(url, params=params, verify=False)
     soup = BeautifulSoup(data.text, 'html.parser')
-    univ_entrance = soup.select_one('#excel > div.table_wrap > div.schoolinfo_table.graytable > table > tbody > tr:nth-child(4) > td:nth-child(3)')
+    univ_entrance = soup.select_one(
+        '#excel > div.table_wrap > div.schoolinfo_table.graytable > table > tbody > tr:nth-child(4) > td:nth-child(3)')
     if univ_entrance is None:
         print(f'{school_name} 대학교 진학자률 : 😭 정보가 없습니다')
     else:
         print(f'{school_name} 대학교 진학자률 : {univ_entrance.text}%')
+
+        doc = {
+            '시도': sido,
+            '시군구': sigungu,
+            '고등학교': school_name,  # DB에는 숫자처럼 생긴 문자열 형태로 저장됩니다.
+            '4년제 진학률': univ_entrance.text  # DB에는 숫자처럼 생긴 문자열 형태로 저장됩니다.
+        }
+        db.dbschool.insert_one(doc)
 
 
 def run():
@@ -182,9 +196,11 @@ def run():
             for school in school_list:
                 school_name = school['SCHUL_NM']
                 school_code = school['SCHUL_CODE']
-                get_school_info(school_name, school_code)
+                get_school_info(sido_name, sigungu_name, school_name, school_code)
                 # break
             # break
         # break
 
+
 run()
+
