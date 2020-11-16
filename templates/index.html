@@ -9,6 +9,10 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
+        <meta property="og:title" content="Eduniverse"/>
+        <meta property="og:description" content="고등학교 선택가이드 | 우리 동네 고교순위"/>
+        <meta property="og:image" content="{{ url_for('static', filename='desks.jpg') }}"/>
+
         <!-- Bootstrap CSS -->
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
               integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
@@ -16,8 +20,8 @@
 
         <!-- JS -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
-                integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"
+                integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx"
                 crossorigin="anonymous"></script>
 
         <!-- 구글폰트 -->
@@ -26,37 +30,59 @@
         <script type="text/javascript">
 
             $(document).ready(function () {
-                $("#info-box").html("");
-                showsido();
+                showSchool('시도');
+                getSido();
             });
 
 
-            function showsido() {
+            function showSchool(sido) {
+                $("#info-box").html("");
+                $("#sidoButton").text(sido);
                 // 1. 리뷰 목록을 서버에 요청하기
                 // 2. 요청 성공 여부 확인하기
                 // 3. 요청 성공했을 때 리뷰를 올바르게 화면에 나타내기
                 $.ajax({
                     type: "GET",
-                    url: "/review",
+                    url: `/school/${sido}`,
                     data: {},
                     success: function (response) {
-                        if (response["result"] == "success") {
-                            let reviews = (response["reviews"])
-                            for (let i = 0; i < reviews.length; i++) {
-                                let review = reviews[i]
-                                let title = review['title']
-                                let author = review['author']
-                                let content = review['review']
+                        if (response["result"] === "success") {
+                            let data = (response["data"])
+                            for (let i = 0; i < data.length; i++) {
+                                let school = data[i]
+                                let univ_entrance = school['4년제 진학률']
+                                let school_name = school['고등학교']
+                                let sigungu = school['시군구']
+                                let sido = school['시도']
                                 let temp = `<tr>
-                                                <td>${title}</td>
-                                                <td>${author}</td>
-                                                <td>${content}</td>
-                                                <td>${content}</td>
+                                                <td>${sido}</td>
+                                                <td>${sigungu}</td>
+                                                <td>${school_name}</td>
+                                                <td>${univ_entrance}</td>
                                             </tr>`
                                 $('#info-box').append(temp)
                             }
-                        } else {
-                            alert("리뷰를 받아오지 못했습니다");
+                        }
+                    }
+                })
+            }
+
+            function getSido() {
+                // 1. 리뷰 목록을 서버에 요청하기
+                // 2. 요청 성공 여부 확인하기
+                // 3. 요청 성공했을 때 리뷰를 올바르게 화면에 나타내기
+                $.ajax({
+                    type: "GET",
+                    url: "/sido",
+                    data: {},
+                    success: function (response) {
+                        if (response["result"] == "success") {
+                            let data = response["data"]
+                            for (let i = 0; i < data.length; i++) {
+                                let sido = data[i]
+                                let temp = `<a onclick="showSchool('${sido}')" class="dropdown-item" href="#">${sido}</a>`
+                                $('#sido-list').append(temp)
+                            }
                         }
                     }
                 })
@@ -70,44 +96,63 @@
                 font-family: "Do Hyeon", sans-serif;
             }
 
-            h1,
-            h5 {
-                display: inline;
+            .wrap {
+                display: flex;
+                flex-direction: column;
+                align-content: center;
+                padding: 30px 200px 30px 200px;
             }
 
-            .info {
-                margin-top: 20px;
+            .title {
+                width: 100%;
                 margin-bottom: 20px;
             }
 
-            .reviews {
-                text-align: center;
+            .table {
+                width: 100%;
+                border-top: 1px solid #444444;
+                border-collapse: collapse;
             }
 
-            .reviews {
-                margin-top: 100px;
+            .dropdown-toggle {
+                background-color: black;
+            }
+
+            .image-container {
+                background-image: url(../static/desks.jpg);
+                width: 100%;
+                height: 300px;
+                background-size: cover;
+                background-position: bottom;
             }
         </style>
     </head>
 
     <body>
-        <div><h1>고등학교 선택가이드 | 우리 동네 고교순위</h1></div>
-        <div class="container">
-            <div class="reviews">
-                <table class="table">
-                    <thead>
-                    <tr>
-                        <th scope="col">시도</th>
-                        <th scope="col">시군구</th>
-                        <th scope="col">고등학교</th>
-                        <th scope="col">4년제 진학률</th>
-                    </tr>
-                    </thead>
-                    <tbody id="info-box">
-                    </tbody>
-                </table>
-            </div>
+        <div class="image-container"></div>
+        <div class="wrap">
+            <div class="title"><h2><b>고등학교 선택가이드</b> | 우리 동네 고교순위</h2></div>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col">
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="sidoButton"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                시도
+                            </button>
+                            <div id="sido-list" class="dropdown-menu" aria-labelledby="sidoButton">
+                            </div>
+                        </div>
+                    </th>
+                    <th scope="col">시군구</th>
+                    <th scope="col">고등학교</th>
+                    <th scope="col">4년제 진학률</th>
+                </tr>
+                </thead>
+                <tbody id="info-box">
+                </tbody>
+            </table>
         </div>
     </body>
-
 </html>
